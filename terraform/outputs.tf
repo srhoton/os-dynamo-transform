@@ -32,3 +32,18 @@ output "opensearch_dashboard_endpoint" {
   description = "OpenSearch Dashboards endpoint for the collection"
   value       = aws_opensearchserverless_collection.main.dashboard_endpoint
 }
+
+output "eventbridge_bus_arn" {
+  description = "ARN of the custom EventBridge bus receiving DynamoDB stream events"
+  value       = aws_cloudwatch_event_bus.main.arn
+}
+
+output "lambda_function_name" {
+  description = "Name of the stream processor Lambda function"
+  value       = aws_lambda_function.stream_processor.function_name
+}
+
+output "lambda_function_arn" {
+  description = "ARN of the stream processor Lambda function"
+  value       = aws_lambda_function.stream_processor.arn
+}

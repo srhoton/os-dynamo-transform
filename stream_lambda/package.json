@@ -1,0 +1,26 @@
+{
+  "name": "stream-lambda",
+  "version": "1.0.0",
+  "description": "Processes DynamoDB stream records delivered via EventBridge and indexes them into OpenSearch Serverless",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "build": "esbuild src/handler.ts --bundle --platform=node --target=node20 --outfile=dist/handler.js --sourcemap",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@aws-sdk/credential-provider-node": "3.658.1",
+    "@aws-sdk/util-dynamodb": "3.658.1",
+    "@opensearch-project/opensearch": "2.13.0"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-dynamodb": "3.658.1",
+    "@types/aws-lambda": "8.10.145",
+    "@types/node": "20.16.10",
+    "esbuild": "0.24.0",
+    "typescript": "5.6.2",
+    "vitest": "2.1.2"
+  }
+}

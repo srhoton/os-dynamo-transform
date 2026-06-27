@@ -68,7 +68,10 @@ resource "aws_opensearchserverless_access_policy" "main" {
           ResourceType = "index"
         }
       ]
-      Principal = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+      Principal = [
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root",
+        aws_iam_role.lambda.arn,
+      ]
     }
   ])
 }
