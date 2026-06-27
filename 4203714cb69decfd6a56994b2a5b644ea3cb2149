@@ -1,0 +1,13 @@
+Session prompts that produced this commit:
+
+1. "In this repo we will do several steps to build an overall implementation of a project. The first step I would like you to plan out is: Create a directory called terraform. In that directory, write terraform that will build out two dynamo db tables, one called 'work_order' and another called 'invoice'. You can decide what the data structure should be, but we do need to be sure the work_order table has an invoice_id attribute that will link to the invoice table, and the invoice table should have a primary key of invoice_id. Both tables should have streaming enabled."
+
+2. "Port will not be used in this project."
+
+3. (Plan approval feedback) "That's fine, but when you go to plan it, use aws sso profile fb-sandbox-non-prod/Admin"
+
+4. "apply it"
+
+5. "ok, can you modify what you've done to default into us-west-2, delete the resources in us-east-1, and reapply?"
+
+6. "/trueup — ok. Please commit your work, add prompts in this session to the commit via git notes, push it, and using your github cli tool, create a PR. Make sure the README for the PR accurately describes the changes made from a full diff from the branch you are merging into."
