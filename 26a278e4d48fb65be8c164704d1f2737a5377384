@@ -1,0 +1,9 @@
+Session prompts that produced this commit:
+
+1. "k, now we want to cable the dynamodb streams to an eventbridge bus, which will then trigger a lambda function. The lambda should: Be written in Typescript; Work with the event data from both the streams; Should upload each stream record to a separate opensearch index based on the stream name; Be created in the folder 'stream_lambda' in the repo. So, you task is: Cable the existing DynamoDB streams to an EventBridge bus using a pipe via terraform; Create a lambda that reads off the EventBridge bus and processes the events, uploading them to OpenSearch indices based on the stream name; Set up all required IAM roles and permissions for the Lambda to read from EventBridge and write to OpenSearch. Let me know what questions you have about the requirements or if you need any clarifications."
+
+2. (Clarifying answers) Index naming = suffixed "-index" (invoice-index, work_order-index); REMOVE handling = delete from index (mirror table state, PK as _id); npm registry = public npm only, no @fullbay .npmrc.
+
+3. (Plan approval feedback) "One additional ask - make sure everything (including the lambda) builds and deploys on a terraform apply."
+
+4. "/trueup — ok. Please commit your work, add prompts in this session to the commit via git notes, push it, and using your github cli tool, create a PR. Make sure the README for the PR accurately describes the changes made from a full diff from the branch you are merging into."
