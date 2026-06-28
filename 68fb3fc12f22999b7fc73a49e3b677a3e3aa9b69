@@ -1,0 +1,7 @@
+Session prompts that produced this commit:
+
+1. "ok, that's merged. One last ask. Plan out updating the readme with a comprehensive description of both solutions, and how to trigger and test both, with expected result shapes."
+
+2. (Plan defaulted, no clarifying questions needed) Target = root README.md (was a 2-line stub); stream_lambda/README.md stays as the component doc and is cross-linked. Result shapes use the real inv-100/wo-100/wo-101 data verified live earlier in the session.
+
+3. "/trueup — ok. Please commit your work, add prompts in this session to the commit via git notes, push it, and using your github cli tool, create a PR. Make sure the README for the PR accurately describes the changes made from a full diff from the branch you are merging into."
