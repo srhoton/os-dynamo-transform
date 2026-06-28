@@ -1,133 +1,52 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const index = vi.fn();
-const del = vi.fn();
-const fakeClient = { index, delete: del };
-
-vi.mock("../opensearchClient", () => ({
-  getClient: (): unknown => fakeClient,
+const { applyToFlatIndex, applyToCombinedIndex } = vi.hoisted(() => ({
+  applyToFlatIndex: vi.fn(),
+  applyToCombinedIndex: vi.fn(),
 }));
 
-// Imported after the mock is registered.
+vi.mock("../opensearchClient", () => ({ getClient: (): unknown => ({}) }));
+vi.mock("../flatIndex", () => ({ applyToFlatIndex }));
+vi.mock("../combinedIndex", () => ({ applyToCombinedIndex }));
+
 import { handler } from "../handler";
 
-const ARN_INVOICE = "arn:aws:dynamodb:us-west-2:111:table/invoice/stream/x";
-const ARN_WORK_ORDER = "arn:aws:dynamodb:us-west-2:111:table/work_order/stream/y";
+const ARN = "arn:aws:dynamodb:us-west-2:111:table/invoice/stream/x";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function event(detail: unknown): any {
   return { detail };
 }
 
+const sampleDetail = {
+  eventName: "INSERT",
+  eventSourceARN: ARN,
+  dynamodb: { Keys: { invoice_id: { S: "inv-1" } }, NewImage: { invoice_id: { S: "inv-1" } } },
+};
+
 describe("handler", () => {
   beforeEach(() => {
-    index.mockReset();
-    del.mockReset();
-    index.mockResolvedValue({ statusCode: 200 });
-    del.mockResolvedValue({ statusCode: 200 });
+    applyToFlatIndex.mockReset().mockResolvedValue(undefined);
+    applyToCombinedIndex.mockReset().mockResolvedValue(undefined);
   });
 
-  it("indexes the unmarshalled NewImage on INSERT", async () => {
-    await handler(
-      event({
-        eventName: "INSERT",
-        eventSourceARN: ARN_INVOICE,
-        dynamodb: {
-          Keys: { invoice_id: { S: "inv-1" } },
-          NewImage: { invoice_id: { S: "inv-1" }, amount: { N: "100" } },
-        },
-      }),
-    );
-
-    expect(index).toHaveBeenCalledTimes(1);
-    expect(index).toHaveBeenCalledWith({
-      index: "invoice-index",
-      id: "inv-1",
-      body: { invoice_id: "inv-1", amount: 100 },
-    });
-    expect(del).not.toHaveBeenCalled();
+  it("applies each record to both the flat and combined writers", async () => {
+    await handler(event(sampleDetail));
+    expect(applyToFlatIndex).toHaveBeenCalledTimes(1);
+    expect(applyToCombinedIndex).toHaveBeenCalledTimes(1);
+    const firstCall = applyToFlatIndex.mock.calls[0];
+    expect(firstCall).toBeDefined();
+    expect(firstCall?.[1]).toMatchObject({ id: "inv-1", flatIndex: "invoice-index" });
   });
 
-  it("upserts on MODIFY", async () => {
-    await handler(
-      event({
-        eventName: "MODIFY",
-        eventSourceARN: ARN_WORK_ORDER,
-        dynamodb: {
-          Keys: { work_order_id: { S: "wo-9" } },
-          NewImage: { work_order_id: { S: "wo-9" }, status: { S: "closed" } },
-        },
-      }),
-    );
-
-    expect(index).toHaveBeenCalledWith({
-      index: "work_order-index",
-      id: "wo-9",
-      body: { work_order_id: "wo-9", status: "closed" },
-    });
+  it("processes every record when detail is an array", async () => {
+    await handler(event([sampleDetail, sampleDetail]));
+    expect(applyToFlatIndex).toHaveBeenCalledTimes(2);
+    expect(applyToCombinedIndex).toHaveBeenCalledTimes(2);
   });
 
-  it("deletes the document on REMOVE", async () => {
-    await handler(
-      event({
-        eventName: "REMOVE",
-        eventSourceARN: ARN_WORK_ORDER,
-        dynamodb: { Keys: { work_order_id: { S: "wo-9" } } },
-      }),
-    );
-
-    expect(del).toHaveBeenCalledWith({ index: "work_order-index", id: "wo-9" });
-    expect(index).not.toHaveBeenCalled();
-  });
-
-  it("swallows a 404 on REMOVE", async () => {
-    del.mockRejectedValueOnce({ statusCode: 404 });
-    await expect(
-      handler(
-        event({
-          eventName: "REMOVE",
-          eventSourceARN: ARN_INVOICE,
-          dynamodb: { Keys: { invoice_id: { S: "gone" } } },
-        }),
-      ),
-    ).resolves.toBeUndefined();
-  });
-
-  it("rethrows a non-404 error on REMOVE", async () => {
-    del.mockRejectedValueOnce({ statusCode: 500 });
-    await expect(
-      handler(
-        event({
-          eventName: "REMOVE",
-          eventSourceARN: ARN_INVOICE,
-          dynamodb: { Keys: { invoice_id: { S: "boom" } } },
-        }),
-      ),
-    ).rejects.toMatchObject({ statusCode: 500 });
-  });
-
-  it("processes each record when detail is an array", async () => {
-    await handler(
-      event([
-        {
-          eventName: "INSERT",
-          eventSourceARN: ARN_INVOICE,
-          dynamodb: {
-            Keys: { invoice_id: { S: "a" } },
-            NewImage: { invoice_id: { S: "a" } },
-          },
-        },
-        {
-          eventName: "INSERT",
-          eventSourceARN: ARN_WORK_ORDER,
-          dynamodb: {
-            Keys: { work_order_id: { S: "b" } },
-            NewImage: { work_order_id: { S: "b" } },
-          },
-        },
-      ]),
-    );
-
-    expect(index).toHaveBeenCalledTimes(2);
+  it("propagates writer failures so EventBridge retries", async () => {
+    applyToCombinedIndex.mockRejectedValueOnce(new Error("boom"));
+    await expect(handler(event(sampleDetail))).rejects.toThrow("boom");
   });
 });
