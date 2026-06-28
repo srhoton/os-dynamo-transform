@@ -1,0 +1,18 @@
+Session prompts that produced this commit:
+
+1. "Ok, now I want you to think through a bit of functionality in the opensearch cluster. We have two indexes from the dynamo tables. What I would like to do is create index aliases for each of the two indexes. Then, I would like to build a continuous transformation that uses the aliases to allow you to query both indexes simultaneously. This way, we can abstract away the underlying index names and provide a unified interface for querying data from both sources. Can you plan that out for me? If there is a better way to do this, please propose it."
+
+2. (Clarifying) Approach = real-time unified alias (transforms/ISM unsupported on AOSS); unified alias name = "transactions"; per-index aliases invoice/work_order.
+
+3. "One quick question about this approach. Fundamentally, the query we need to service is something like this: 'give me all the invoices from a work order'. Would that kind of search work in this design?"
+
+4. (Clarifying) Access pattern = invoice -> its work orders (work order links to one invoice); join strategy = single combined index with join field. [Parent-child join not viable on AOSS due to no custom routing; nested denormalization is the AOSS-correct equivalent.]
+
+5. "I think we are going to need option 2, but could you build it both ways? Since this is a poc I would like to present both options." -> build Option 1 (aliases) AND Option 2 (nested denormalization).
+
+6. "/trueup — ok. Please commit your work, add prompts in this session to the commit via git notes, push it, and using your github cli tool, create a PR. Make sure the README for the PR accurately describes the changes made from a full diff from the branch you are merging into."
+
+Implementation notes (discovered via live testing against AOSS):
+- AOSS does NOT support continuous transforms/ISM nor custom routing (so parent-child join is out); aliases, nested fields, and server-side scripted _update ARE supported.
+- Read-modify-write on the combined index was racy (AOSS GET is not real-time) -> switched to server-side scripted_upsert + retry_on_conflict.
+- term queries needed keyword mappings -> bootstrap creates indexes with explicit keyword/nested mappings.
