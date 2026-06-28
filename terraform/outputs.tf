@@ -47,3 +47,18 @@ output "lambda_function_arn" {
   description = "ARN of the stream processor Lambda function"
   value       = aws_lambda_function.stream_processor.arn
 }
+
+output "unified_alias" {
+  description = "Option 1: alias spanning both indexes for unified querying"
+  value       = "transactions"
+}
+
+output "index_aliases" {
+  description = "Option 1: per-index aliases abstracting the physical index names"
+  value       = ["invoice", "work_order"]
+}
+
+output "combined_index" {
+  description = "Option 2: denormalized index where each invoice holds a nested work_orders array"
+  value       = "invoice-combined"
+}

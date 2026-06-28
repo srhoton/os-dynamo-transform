@@ -5,7 +5,7 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "build": "esbuild src/handler.ts --bundle --platform=node --target=node20 --outfile=dist/handler.js --sourcemap",
+    "build": "esbuild src/handler.ts src/bootstrap.ts --bundle --platform=node --target=node20 --outdir=dist --sourcemap",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
